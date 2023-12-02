@@ -2,7 +2,7 @@ package packet
 
 type PlayerPositionOrientation struct {
 	PlayerID   int8
-	X, Y, Z    float32
+	X, Y, Z    int16 //float32
 	Yaw, Pitch byte
 }
 
@@ -12,18 +12,18 @@ func (PlayerPositionOrientation) ID() byte {
 
 func (m *PlayerPositionOrientation) Decode(r Reader) {
 	r.SByte(&m.PlayerID)
-	r.FShort(&m.X)
-	r.FShort(&m.Y)
-	r.FShort(&m.Z)
+	r.Short(&m.X)
+	r.Short(&m.Y)
+	r.Short(&m.Z)
 	r.Byte(&m.Yaw)
 	r.Byte(&m.Pitch)
 }
 
 func (m PlayerPositionOrientation) Encode(w Writer) {
 	w.SByte(m.PlayerID)
-	w.Short(int16(m.X))
-	w.Short(int16(m.Y))
-	w.Short(int16(m.Z))
+	w.Short(m.X)
+	w.Short(m.Y)
+	w.Short(m.Z)
 	w.Byte(m.Yaw)
 	w.Byte(m.Pitch)
 }

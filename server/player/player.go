@@ -10,6 +10,7 @@ import (
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
 	"obsidian/server/world"
+	"sync"
 	a "sync/atomic"
 	"unsafe"
 )
@@ -22,10 +23,13 @@ type Player struct {
 	id   int32
 
 	OP         atomic.Value[bool]
-	X, Y, Z    atomic.Value[float32]
+	X, Y, Z    atomic.Value[int16]
 	Yaw, Pitch atomic.Value[byte]
 	world      *world.World
 	players    *broadcast.Broadcaster[*Player]
+
+	mu             sync.RWMutex
+	spawnedPlayers []int32
 }
 
 func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcaster[*Player]) *Player {
@@ -39,34 +43,32 @@ func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcas
 }
 
 func (p *Player) Join() {
-	p.conn.WritePacket(&packet.PlayerPositionOrientation{
-		PlayerID: -1,
-		X:        float32(p.world.Data.Spawn.X),
-		Y:        float32(p.world.Data.Spawn.Y),
-		Z:        float32(p.world.Data.Spawn.Z),
-		Yaw:      byte(p.world.Data.Spawn.H),
-		Pitch:    byte(p.world.Data.Spawn.P),
-	})
-
-	p.spawn()
-
 	p.conn.WritePacket(packet.LevelInitialize{})
 	p.sendWorldData()
 	p.conn.WritePacket(&packet.LevelFinalize{XSize: p.world.Data.X, YSize: p.world.Data.Y, ZSize: p.world.Data.Z})
+
+	p.conn.WritePacket(&packet.PlayerPositionOrientation{
+		PlayerID: -1,
+		X:        p.world.Data.Spawn.X,
+		Y:        p.world.Data.Spawn.Y,
+		Z:        p.world.Data.Spawn.Z,
+		Yaw:      byte(p.world.Data.Spawn.H),
+		Pitch:    byte(p.world.Data.Spawn.P),
+	})
 }
 
-func (p *Player) spawn() {
+func (p *Player) SetBlock(x, y, z int16, blockType byte) {
+	p.world.SetBlock(x, y, z, blockType)
 	p.players.Range(func(t *Player) bool {
-		if t.Name() == p.Name() {
-			return true
-		}
-
-		t.SpawnPlayer(p)
+		t.conn.WritePacket(&packet.SetBlock{
+			X: x, Y: y, Z: z,
+			BlockType: blockType,
+		})
 		return true
 	})
 }
 
-func (p *Player) Move(x, y, z float32, yaw, pitch byte) {
+func (p *Player) Move(x, y, z int16, yaw, pitch byte) {
 	p.X.Set(x)
 	p.Y.Set(y)
 	p.Z.Set(z)
@@ -77,21 +79,26 @@ func (p *Player) Move(x, y, z float32, yaw, pitch byte) {
 		if t.Name() == p.Name() {
 			return true
 		}
-
-		t.conn.WritePacket(&packet.SpawnPlayer{
-			PlayerID:   int8(p.id),
-			PlayerName: p.Name(),
-			X:          x,
-			Y:          y,
-			Z:          z,
-			Yaw:        yaw,
-			Pitch:      pitch,
-		})
+		if t.IsSpawned(p) {
+			t.conn.WritePacket(&packet.PlayerPositionOrientation{
+				PlayerID: int8(p.id),
+				X:        x,
+				Y:        y,
+				Z:        z,
+				Yaw:      yaw,
+				Pitch:    pitch,
+			})
+		} else {
+			t.SpawnPlayer(p)
+		}
 		return true
 	})
 }
 
 func (p *Player) SpawnPlayer(pl *Player) {
+	p.mu.Lock()
+	p.spawnedPlayers = append(p.spawnedPlayers, pl.id)
+	p.mu.Unlock()
 	p.conn.WritePacket(&packet.SpawnPlayer{
 		PlayerID:   int8(pl.id),
 		PlayerName: pl.Name(),
@@ -101,6 +108,17 @@ func (p *Player) SpawnPlayer(pl *Player) {
 		Yaw:        pl.Yaw.Get(),
 		Pitch:      p.Pitch.Get(),
 	})
+}
+
+func (p *Player) IsSpawned(pl *Player) bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, s := range p.spawnedPlayers {
+		if s == pl.id {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Player) sendWorldData() {

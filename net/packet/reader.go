@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"fmt"
 	"io"
 	"strings"
 )
@@ -9,7 +8,7 @@ import (
 var serverBoundPool = map[byte]func() Packet{
 	0x00: func() Packet { return &PlayerIdentification{} },
 	0x05: func() Packet { return &SetBlockServer{} },
-	//0x08: func() Packet { return &PlayerPositionOrientation{} },
+	0x08: func() Packet { return &PlayerPositionOrientation{} },
 	0x0d: func() Packet { return &Message{} },
 }
 
@@ -17,8 +16,6 @@ func ReadPacket(r io.Reader) Packet {
 	var id [1]byte
 
 	_, err := r.Read(id[:])
-
-	fmt.Println(id[0])
 
 	if err != nil {
 		return nil
@@ -66,9 +63,9 @@ func (r Reader) Short(i *int16) {
 func (r Reader) FShort(i *float32) {
 	d := r.readBytes(2)
 
-	*i = float32(int16(d[0])<<8 | int16(d[1]))
+	x := int16(d[0])<<8 | int16(d[1])
 
-	fmt.Println(i)
+	*i = float32(x / 32)
 }
 
 func (r Reader) String(s *string) {

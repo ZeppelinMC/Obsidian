@@ -85,13 +85,26 @@ func (srv *Server) handleConnection(c net.Conn) {
 			pac := packet.ReadPacket(c)
 			if pac == nil {
 				srv.players.Remove(pk.Username)
+
+				msg := fmt.Sprintf("%s has left the game", p.Name())
+
+				srv.players.Range(func(t *player.Player) bool {
+					t.SendMessage(msg)
+					return true
+				})
+
 				return
 			}
 			switch pk := pac.(type) {
 			case *packet.Message:
 				p.Chat(pk.Message)
 			case *packet.PlayerPositionOrientation:
-
+				p.Move(pk.X, pk.Y, pk.Z, pk.Yaw, pk.Pitch)
+			case *packet.SetBlockServer:
+				if pk.Mode == 0 {
+					pk.BlockType = 0
+				}
+				p.SetBlock(pk.X, pk.Y, pk.Z, pk.BlockType)
 			}
 		}
 	}
