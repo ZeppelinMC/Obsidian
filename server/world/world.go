@@ -55,6 +55,16 @@ func LoadWorld() *World {
 	return &World{d}
 }
 
+func (w *World) Save() {
+	file, _ := os.Create("world/main.cw")
+	g := gzip.NewWriter(file)
+
+	nbt.NewEncoder(g).Encode(w.Data)
+
+	g.Close()
+	file.Close()
+}
+
 type Block byte
 
 const (
