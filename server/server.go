@@ -47,6 +47,7 @@ func (srv *Server) Start(startTime time.Time) {
 
 func (srv *Server) Stop() {
 	srv.listener.Close()
+	srv.world.Save()
 }
 
 func (srv *Server) handleConnection(c net.Conn) {

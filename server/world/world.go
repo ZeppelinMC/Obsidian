@@ -2,7 +2,6 @@ package world
 
 import (
 	"compress/gzip"
-	"fmt"
 	"os"
 
 	"github.com/aimjel/minecraft/nbt"
@@ -37,9 +36,11 @@ type World struct {
 	Data WorldData
 }
 
-func (w *World) SetBlock(x, y, z int16, blockType byte) {
-	i := x + w.Data.X*(z+w.Data.Z*y)
-	fmt.Println(w.Data.BlockArray[i])
+func (w *World) SetBlock(x1, y1, z1 int16, blockType byte) {
+	x, y, z := int(x1), int(y1), int(z1)
+	wx, wz := int(w.Data.X), int(w.Data.Z)
+
+	i := x + wx*(z+wz*y)
 	w.Data.BlockArray[i] = int8(blockType)
 }
 
