@@ -36,12 +36,19 @@ type World struct {
 	Data WorldData
 }
 
-func (w *World) SetBlock(x1, y1, z1 int16, blockType byte) {
-	x, y, z := int(x1), int(y1), int(z1)
-	wx, wz := int(w.Data.X), int(w.Data.Z)
+func (w *World) SetBlock(x, y, z int16, blockType byte) {
+	w.Data.BlockArray[w.GetIndex(x, y, z)] = int8(blockType)
+}
 
-	i := x + wx*(z+wz*y)
-	w.Data.BlockArray[i] = int8(blockType)
+func (w *World) GetIndex(x, y, z int16) int {
+	return int(x) + int(w.Data.X)*(int(z)+int(w.Data.Z)*int(y))
+}
+
+func (w *World) XYZ(index int) (int16, int16, int16) {
+	x := index % int(w.Data.X)
+	y := index / (int(w.Data.X) * int(w.Data.Z))
+	z := (index / int(w.Data.X)) % int(w.Data.Y)
+	return int16(x), int16(y), int16(z)
 }
 
 func LoadWorld() *World {

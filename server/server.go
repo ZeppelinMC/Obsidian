@@ -46,8 +46,12 @@ func (srv *Server) Start(startTime time.Time) {
 }
 
 func (srv *Server) Stop() {
-	srv.listener.Close()
 	srv.world.Save()
+	srv.players.Range(func(t *player.Player) bool {
+		t.Disconnect("Server closed")
+		return true
+	})
+	srv.listener.Close()
 }
 
 func (srv *Server) handleConnection(c net.Conn) {
