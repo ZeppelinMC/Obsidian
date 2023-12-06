@@ -61,3 +61,58 @@ const escape = "\x1b"
 func (c Color) Colorize(str string) string {
 	return fmt.Sprintf("%s[%sm%s%s[0m", escape, strings.Join(c, ";"), str, escape)
 }
+
+func (c Color) colorize() string {
+	return fmt.Sprintf("%s[%sm", escape, strings.Join(c, ";"))
+}
+
+func FromCode(str string) string {
+	var s strings.Builder
+	var cuco Color
+	for i, c := range str {
+		if c == '&' && len(str) > i {
+			switch {
+			case str[i+1] == 'r':
+				clear(cuco)
+			case isColor(str[i+1]):
+				cuco = append(cuco, colors[str[i+1]])
+			}
+			continue
+		}
+		if isColor(byte(c)) && i != 0 && str[i-1] == '&' {
+			continue
+		}
+		s.WriteString(cuco.colorize())
+		s.WriteRune(c)
+	}
+	return s.String()
+}
+
+func isColor(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'k' && c <= 'o') || c == 'r'
+}
+
+var colors = map[byte]Attribute{
+	'0': FgBlack,
+	'1': FgBlue,
+	'2': FgGreen,
+	'3': FgCyan,
+	'4': FgRed,
+	'5': FgMagenta,
+	'6': FgYellow,
+	'7': FgWhite,
+	'8': FgBrBlack,
+	'9': FgBlue,
+	'a': FgBrGreen,
+	'b': FgBrCyan,
+	'c': FgBrRed,
+	'd': FgBrMagenta,
+	'e': FgBrYellow,
+	'f': FgBrWhite,
+
+	'k': Hidden,
+	'l': Bold,
+	'm': Strikethrough,
+	'n': Underline,
+	'o': Italic,
+}

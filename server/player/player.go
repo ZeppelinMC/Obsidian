@@ -9,8 +9,10 @@ import (
 	"obsidian/net"
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
+	"obsidian/server/command"
 	"obsidian/server/world"
 	"slices"
+	"strings"
 	"sync"
 	"unsafe"
 )
@@ -35,17 +37,20 @@ type Player struct {
 	world      *world.World
 	players    *broadcast.Broadcaster[*Player]
 
+	commandMgr *command.CommandManager
+
 	mu             sync.RWMutex
 	spawnedPlayers []int8
 }
 
-func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcaster[*Player]) *Player {
+func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcaster[*Player], mgr *command.CommandManager) *Player {
 	return &Player{
-		name:    name,
-		conn:    conn,
-		world:   w,
-		players: players,
-		id:      idCounter.Add(1),
+		name:       name,
+		conn:       conn,
+		world:      w,
+		players:    players,
+		id:         idCounter.Add(1),
+		commandMgr: mgr,
 	}
 }
 
@@ -175,10 +180,36 @@ func (p *Player) Disconnect(reason string) {
 }
 
 func (p *Player) Chat(message string) {
+	if strings.HasPrefix(message, "/") {
+		if len(message) <= 1 {
+			goto msg
+		}
+		p.command(strings.TrimPrefix(message, "/"))
+		return
+	}
+
+msg:
 	msg := fmt.Sprintf("&f<%s> %s", p.name, message)
 	p.players.Range(func(t *Player) bool {
 		t.SendMessage(msg)
 		return true
+	})
+}
+
+func (p *Player) command(cmd string) {
+	args := strings.Split(cmd, " ")
+	cmd = args[0]
+	args = args[1:]
+
+	c, ok := p.commandMgr.Search(cmd)
+	if !ok {
+		p.SendMessage("&cUnknown command. Use \"/help\" for a list of commands.")
+		return
+	}
+
+	c.Execute(command.CommandContext{
+		Arguments: args,
+		Executor:  p,
 	})
 }
 

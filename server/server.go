@@ -7,6 +7,7 @@ import (
 	net2 "obsidian/net"
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
+	"obsidian/server/command/core"
 	"obsidian/server/player"
 	"obsidian/server/world"
 	"time"
@@ -74,7 +75,7 @@ func (srv *Server) handleConnection(c net.Conn) {
 			ServerMOTD:      "hi!!",
 			UserType:        0x64,
 		})
-		p := player.New(pk.Username, conn, srv.world, srv.players)
+		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
 		srv.players.Set(pk.Username, p)
 
 		msg := fmt.Sprintf("%s has joined the game", p.Name())
