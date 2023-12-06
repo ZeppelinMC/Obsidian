@@ -95,6 +95,9 @@ func (srv *Server) handleConnection(c net.Conn) {
 
 				srv.players.Range(func(t *player.Player) bool {
 					t.SendMessage(msg)
+					if t.IsSpawned(p) {
+						t.DespawnPlayer(p)
+					}
 					return true
 				})
 

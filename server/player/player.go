@@ -10,17 +10,24 @@ import (
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
 	"obsidian/server/world"
+	"slices"
 	"sync"
-	a "sync/atomic"
 	"unsafe"
 )
 
-var idCounter a.Int32
+type counter int8
+
+func (c *counter) Add(i int8) int8 {
+	*c++
+	return int8(*c)
+}
+
+var idCounter counter = -128
 
 type Player struct {
 	conn net.Conn
 	name string
-	id   int32
+	id   int8
 
 	OP         atomic.Value[bool]
 	X, Y, Z    atomic.Value[int16]
@@ -29,7 +36,7 @@ type Player struct {
 	players    *broadcast.Broadcaster[*Player]
 
 	mu             sync.RWMutex
-	spawnedPlayers []int32
+	spawnedPlayers []int8
 }
 
 func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcaster[*Player]) *Player {
@@ -107,6 +114,18 @@ func (p *Player) SpawnPlayer(pl *Player) {
 		Z:          pl.Z.Get(),
 		Yaw:        pl.Yaw.Get(),
 		Pitch:      p.Pitch.Get(),
+	})
+}
+
+func (p *Player) DespawnPlayer(pl *Player) {
+	p.mu.Lock()
+	slices.DeleteFunc(p.spawnedPlayers, func(i int8) bool {
+		return i == pl.id
+	})
+	p.mu.Unlock()
+
+	p.conn.WritePacket(&packet.DespawnPlayer{
+		PlayerID: pl.id,
 	})
 }
 
