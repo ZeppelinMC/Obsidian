@@ -16,7 +16,8 @@ var startTime = time.Now()
 
 func main() {
 	log.Info("Starting Obsidian 0.30 Minecraft Server")
-	srv := server.New("localhost:25565")
+	cfg, _ := server.LoadConfig()
+	srv := cfg.New()
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)

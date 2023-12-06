@@ -13,23 +13,9 @@ import (
 	"time"
 )
 
-func New(addr string) *Server {
-	i, _ := net.ResolveTCPAddr("tcp", addr)
-	l, err := net.ListenTCP("tcp", i)
-	if err != nil {
-		panic(err)
-	}
-	log.Info("Loading world")
-	w := world.LoadWorld()
-	return &Server{
-		listener: l,
-		players:  broadcast.New[*player.Player](),
-		world:    w,
-	}
-}
-
 type Server struct {
 	players  *broadcast.Broadcaster[*player.Player]
+	config   Config
 	world    *world.World
 	listener *net.TCPListener
 }
@@ -71,8 +57,8 @@ func (srv *Server) handleConnection(c net.Conn) {
 
 		conn.WritePacket(&packet.ServerIdentification{
 			ProtocolVersion: 0x07,
-			ServerName:      "someServer",
-			ServerMOTD:      "hi!!",
+			ServerName:      srv.config.ServerName,
+			ServerMOTD:      srv.config.ServerMOTD,
 			UserType:        0x64,
 		})
 		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
