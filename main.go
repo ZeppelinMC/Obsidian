@@ -36,7 +36,6 @@ func scanConsole(srv *server.Server) {
 		fmt.Scanln(&cmd)
 
 		if cmd == "" {
-			fmt.Print("\033[F> ")
 			continue
 		}
 		args := strings.Split(cmd, " ")
