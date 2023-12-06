@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"bufio"
 	"obsidian/log"
 	"obsidian/server"
 	"obsidian/server/command"
@@ -31,9 +31,11 @@ func main() {
 }
 
 func scanConsole(srv *server.Server) {
+	scanner := bufio.NewScanner(os.Stdin)
+
 	for {
-		var cmd string
-		fmt.Scanln(&cmd)
+		scanner.Scan()
+		cmd := scanner.Text()
 
 		if cmd == "" {
 			continue
