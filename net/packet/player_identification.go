@@ -16,8 +16,7 @@ func (p *PlayerIdentification) Decode(r Reader) {
 	r.Byte(&p.ProtocolVersion)
 	r.String(&p.Username)
 	r.String(&p.VerificationKey)
-	cpe := r.readBytes(1)[0] == 0x42
-	p.CPE = cpe
+	p.CPE = r.readBytes(1)[0] == 0x42
 }
 
 func (p PlayerIdentification) Encode(w Writer) {
