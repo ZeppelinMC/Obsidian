@@ -53,6 +53,6 @@ func scanConsole(srv *server.Server) {
 			log.Print("&cThis command can only be used by players.")
 			continue
 		}
-		c.Execute(command.CommandContext{Arguments: args, Executor: srv})
+		c.Execute(command.CommandContext{Arguments: args, Executor: srv, Manager: core.Manager})
 	}
 }

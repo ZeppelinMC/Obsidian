@@ -50,19 +50,38 @@ func (srv *Server) handleConnection(c net.Conn) {
 	if pk, ok := p.(*packet.PlayerIdentification); !ok {
 		return
 	} else {
+		if srv.config.Whitelist && !player.Whitelist.Has(pk.Username) {
+			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are not white-listed in this server"})
+			conn.Close()
+		}
+		if player.BannedPlayers.Has(pk.Username) {
+			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are banned from this server"})
+			conn.Close()
+		}
 		if p := srv.players.Get(pk.Username); p != nil {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are already connected to the server on a different client"})
 			conn.Close()
 		}
 
+		if pk.CPE {
+			conn.WritePacket(&packet.ExtInfo{
+				AppName:        "Obsidian",
+				ExtensionCount: 0,
+			})
+		}
+
+		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
+		srv.players.Set(pk.Username, p)
+		op := byte(0x00)
+		if p.OP.Get() {
+			op = 0x64
+		}
 		conn.WritePacket(&packet.ServerIdentification{
 			ProtocolVersion: 0x07,
 			ServerName:      srv.config.ServerName,
 			ServerMOTD:      srv.config.ServerMOTD,
-			UserType:        0x64,
+			UserType:        op,
 		})
-		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
-		srv.players.Set(pk.Username, p)
 
 		msg := fmt.Sprintf("%s has joined the game", p.Name())
 
@@ -95,6 +114,10 @@ func (srv *Server) handleConnection(c net.Conn) {
 				p.Chat(pk.Message)
 			case *packet.PlayerPositionOrientation:
 				p.Move(pk.X, pk.Y, pk.Z, pk.Yaw, pk.Pitch)
+			case *packet.ExtInfo:
+				p.AppName.Set(pk.AppName)
+			case *packet.ExtEntry:
+				p.Extensions.Set(append(p.Extensions.Get(), pk.ExtName))
 			case *packet.SetBlockServer:
 				if pk.Mode == 0 {
 					pk.BlockType = 0

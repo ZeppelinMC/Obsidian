@@ -10,6 +10,8 @@ var serverBoundPool = map[byte]func() Packet{
 	0x05: func() Packet { return &SetBlockServer{} },
 	0x08: func() Packet { return &PlayerPositionOrientation{} },
 	0x0d: func() Packet { return &Message{} },
+	0x10: func() Packet { return &ExtInfo{} },
+	0x11: func() Packet { return &ExtEntry{} },
 }
 
 func ReadPacket(r io.Reader) Packet {
@@ -66,6 +68,11 @@ func (r Reader) FShort(i *float32) {
 	x := int16(d[0])<<8 | int16(d[1])
 
 	*i = float32(x / 32)
+}
+
+func (r Reader) Int(i *int32) {
+	d := r.readBytes(4)
+	*i = int32(d[0])<<24 | int32(d[0])<<16 | int32(d[0])<<8 | int32(d[0])
 }
 
 func (r Reader) String(s *string) {

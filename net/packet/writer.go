@@ -32,6 +32,10 @@ func (w Writer) Short(i int16) {
 	w.buf.Write([]byte{byte(i >> 8), byte(i)})
 }
 
+func (w Writer) Int(i int32) {
+	w.buf.Write([]byte{byte(i >> 24), byte(i >> 16), byte(i >> 8), byte(i)})
+}
+
 func (w Writer) FShort(i float32) {
 	fmt.Println(i, int16(i*32))
 	w.Short(int16(i * 32))

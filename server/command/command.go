@@ -1,22 +1,30 @@
 package command
 
-import "log"
+import (
+	"obsidian/log"
+	"strings"
+)
 
 type Command struct {
-	Name       string
-	Aliases    []string
-	PlayerOnly bool
-	Execute    func(ctx CommandContext)
+	Name         string
+	Aliases      []string
+	PlayerOnly   bool
+	OperatorOnly bool
+	Execute      func(ctx CommandContext)
 }
 
 type CommandContext struct {
 	Arguments []string
+	Manager   *CommandManager
 	Executor  any
 }
 
 func (c CommandContext) Reply(msg string) {
 	if exe, ok := c.Executor.(interface{ SendMessage(string) }); ok {
-		exe.SendMessage(msg)
+		msgs := strings.Split(msg, "\n")
+		for _, msg := range msgs {
+			exe.SendMessage(msg)
+		}
 	} else {
 		log.Print(msg)
 	}
@@ -42,4 +50,21 @@ func (c *CommandManager) Search(cmd string) (Command, bool) {
 		}
 	}
 	return Command{}, false
+}
+
+func (c *CommandManager) Paginate(pageNumber, pageSize int) []Command {
+	startIndex := (pageNumber - 1) * pageSize
+	endIndex := startIndex + pageSize
+
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > len(c.commands) {
+		startIndex = 0
+	}
+	if endIndex > len(c.commands) {
+		endIndex = len(c.commands)
+	}
+
+	return c.commands[startIndex:endIndex]
 }

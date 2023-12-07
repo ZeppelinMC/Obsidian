@@ -15,6 +15,7 @@ type Config struct {
 	Address    string
 	ServerName string
 	ServerMOTD string
+	Whitelist  bool
 }
 
 func (cfg Config) New() *Server {
@@ -28,6 +29,8 @@ func (cfg Config) New() *Server {
 	}
 	log.Info("Loading world")
 	w := world.LoadWorld()
+
+	player.LoadPlayerData()
 	return &Server{
 		listener: l,
 		players:  broadcast.New[*player.Player](),

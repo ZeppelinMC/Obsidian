@@ -31,6 +31,9 @@ type Player struct {
 	name string
 	id   int8
 
+	Extensions atomic.Value[[]string]
+	AppName    atomic.Value[string]
+
 	OP         atomic.Value[bool]
 	X, Y, Z    atomic.Value[int16]
 	Yaw, Pitch atomic.Value[byte]
@@ -51,6 +54,7 @@ func New(name string, conn net.Conn, w *world.World, players *broadcast.Broadcas
 		players:    players,
 		id:         idCounter.Add(1),
 		commandMgr: mgr,
+		OP:         atomic.New(Operators.Has(name)),
 	}
 }
 
@@ -182,13 +186,13 @@ func (p *Player) Disconnect(reason string) {
 func (p *Player) Chat(message string) {
 	if strings.HasPrefix(message, "/") {
 		if len(message) <= 1 {
-			goto msg
+			goto chat
 		}
 		p.command(strings.TrimPrefix(message, "/"))
 		return
 	}
 
-msg:
+chat:
 	msg := fmt.Sprintf("&f<%s> %s", p.name, message)
 	p.players.Range(func(t *Player) bool {
 		t.SendMessage(msg)
@@ -206,10 +210,15 @@ func (p *Player) command(cmd string) {
 		p.SendMessage("&cUnknown command. Use \"/help\" for a list of commands.")
 		return
 	}
+	if c.OperatorOnly && !p.OP.Get() {
+		p.SendMessage("&cThis command can only be used by operators.")
+		return
+	}
 
 	c.Execute(command.CommandContext{
 		Arguments: args,
 		Executor:  p,
+		Manager:   p.commandMgr,
 	})
 }
 
