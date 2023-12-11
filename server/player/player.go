@@ -240,7 +240,6 @@ func (p *Player) Disconnect(reason string) {
 }
 
 func (p *Player) Chat(message string) {
-	fmt.Println(message)
 	if strings.HasPrefix(message, "/") {
 		if len(message) <= 1 {
 			goto chat
