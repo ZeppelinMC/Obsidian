@@ -9,6 +9,7 @@ import (
 	"obsidian/server/auth"
 	"obsidian/server/broadcast"
 	"obsidian/server/command/core"
+	"obsidian/server/extension"
 	"obsidian/server/player"
 	"obsidian/server/world"
 	"time"
@@ -82,14 +83,16 @@ func (srv *Server) handleConnection(c net.Conn) {
 			conn.Close()
 		}
 
-		if pk.CPE {
-			conn.WritePacket(&packet.ExtInfo{
-				AppName: "Obsidian",
-			})
-		}
-
 		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
 		srv.players.Set(pk.Username, p)
+
+		if pk.CPE {
+			extension.EncodeExtensions(conn)
+			app, exts := extension.DecodeExtensions(conn)
+			p.AppName.Set(app)
+			p.SetExtensions(exts)
+		}
+
 		op := byte(0x00)
 		if p.OP.Get() {
 			op = 0x64
@@ -104,7 +107,9 @@ func (srv *Server) handleConnection(c net.Conn) {
 		msg := fmt.Sprintf("%s has joined the game", p.Name())
 
 		srv.players.Range(func(t *player.Player) bool {
-			t.SendMessage(msg)
+			t.SendMessage(msg, 0)
+			t.AddPlayer(p)
+
 			return true
 		})
 
@@ -118,7 +123,8 @@ func (srv *Server) handleConnection(c net.Conn) {
 				msg := fmt.Sprintf("%s has left the game", p.Name())
 
 				srv.players.Range(func(t *player.Player) bool {
-					t.SendMessage(msg)
+					t.SendMessage(msg, 0)
+					t.RemovePlayer(p)
 					if t.IsSpawned(p) {
 						t.DespawnPlayer(p)
 					}
@@ -132,10 +138,6 @@ func (srv *Server) handleConnection(c net.Conn) {
 				p.Chat(pk.Message)
 			case *packet.PlayerPositionOrientation:
 				p.Move(pk.X, pk.Y, pk.Z, pk.Yaw, pk.Pitch)
-			case *packet.ExtInfo:
-				p.AppName.Set(pk.AppName)
-			case *packet.ExtEntry:
-				p.Extensions.Set(append(p.Extensions.Get(), pk.ExtName))
 			case *packet.SetBlockServer:
 				if pk.Mode == 0 {
 					pk.BlockType = 0

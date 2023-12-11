@@ -2,7 +2,6 @@ package packet
 
 import (
 	"errors"
-	"fmt"
 	"io"
 )
 
@@ -36,11 +35,6 @@ func (w Writer) Int(i int32) {
 	w.buf.Write([]byte{byte(i >> 24), byte(i >> 16), byte(i >> 8), byte(i)})
 }
 
-func (w Writer) FShort(i float32) {
-	fmt.Println(i, int16(i*32))
-	w.Short(int16(i * 32))
-}
-
 func (w Writer) String(s string) error {
 	b := []byte(s)
 	if len(b) > 64 {
@@ -62,4 +56,21 @@ func (w Writer) ByteArray(b []byte) error {
 	}
 	w.buf.Write(b)
 	return nil
+}
+
+func (w Writer) Auto(b any) {
+	switch t := b.(type) {
+	case byte:
+		w.Byte(t)
+	case int8:
+		w.SByte(t)
+	case int16:
+		w.Short(t)
+	case int32:
+		w.Int(t)
+	case string:
+		w.String(t)
+	case []byte:
+		w.ByteArray(t)
+	}
 }

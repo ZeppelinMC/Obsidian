@@ -2,8 +2,8 @@ package packet
 
 type Packet interface {
 	ID() byte
-	Decode(Reader)
 	Encode(Writer)
+	Decode(Reader)
 }
 
 func Marshal(id byte, fields ...any) Packet {
@@ -19,21 +19,6 @@ func (p packet) ID() byte {
 	return p.id
 }
 
-func (p packet) Decode(r Reader) {
-	for _, f := range p.fields {
-		switch field := f.(type) {
-		case uint8:
-			r.Byte(&field)
-		case int8:
-			r.SByte(&field)
-		case int16:
-			r.Short(&field)
-		case []byte:
-			r.ByteArray(&field)
-		}
-	}
-}
-
 func (p packet) Encode(w Writer) {
 	for _, f := range p.fields {
 		switch field := f.(type) {
@@ -45,6 +30,21 @@ func (p packet) Encode(w Writer) {
 			w.Short(field)
 		case []byte:
 			w.ByteArray(field)
+		}
+	}
+}
+
+func (p packet) Decode(r Reader) {
+	for _, f := range p.fields {
+		switch field := f.(type) {
+		case uint8:
+			r.Byte(&field)
+		case int8:
+			r.SByte(&field)
+		case int16:
+			r.Short(&field)
+		case []byte:
+			r.ByteArray(&field)
 		}
 	}
 }
