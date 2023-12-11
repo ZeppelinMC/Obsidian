@@ -3,6 +3,7 @@ package server
 import (
 	"net"
 	"obsidian/log"
+	"obsidian/server/auth"
 	"obsidian/server/broadcast"
 	"obsidian/server/player"
 	"obsidian/server/world"
@@ -11,11 +12,22 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+type listing struct {
+	HeartbeatURL       string
+	HeartbeatFrequency int
+	Public             bool
+	Enforced           bool
+	Enabled            bool
+}
+
 type Config struct {
 	Address    string
 	ServerName string
 	ServerMOTD string
 	Whitelist  bool
+	MaxPlayers int
+
+	Listing listing
 }
 
 func (cfg Config) New() *Server {
@@ -32,10 +44,11 @@ func (cfg Config) New() *Server {
 
 	player.LoadPlayerData()
 	return &Server{
-		listener: l,
-		players:  broadcast.New[*player.Player](),
-		world:    w,
-		config:   cfg,
+		listener:      l,
+		players:       broadcast.New[*player.Player](),
+		world:         w,
+		config:        cfg,
+		authenticator: auth.NewAuthenticator("http://www.classicube.net/heartbeat.jsp", cfg.ServerName, 32, i.Port, false),
 	}
 }
 
@@ -68,4 +81,10 @@ var Default = Config{
 	Address:    "localhost:25565",
 	ServerName: "SomeServer",
 	ServerMOTD: "This is a Minecraft server powered by Obsidian!",
+	MaxPlayers: 32,
+	Listing: listing{
+		HeartbeatURL:       "http://www.classicube.net/heartbeat.jsp",
+		Enabled:            true,
+		HeartbeatFrequency: 45_000,
+	},
 }

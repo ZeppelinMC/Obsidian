@@ -19,6 +19,12 @@ func (b *Broadcaster[T]) Set(username string, p T) {
 	b.players[username] = p
 }
 
+func (b *Broadcaster[T]) Count() int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return len(b.players)
+}
+
 func (b *Broadcaster[T]) Get(username string) T {
 	b.mu.RLock()
 	defer b.mu.RUnlock()

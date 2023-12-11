@@ -6,6 +6,7 @@ import (
 	"obsidian/log"
 	net2 "obsidian/net"
 	"obsidian/net/packet"
+	"obsidian/server/auth"
 	"obsidian/server/broadcast"
 	"obsidian/server/command/core"
 	"obsidian/server/player"
@@ -14,14 +15,24 @@ import (
 )
 
 type Server struct {
-	players  *broadcast.Broadcaster[*player.Player]
-	config   Config
-	world    *world.World
-	listener *net.TCPListener
+	players       *broadcast.Broadcaster[*player.Player]
+	config        Config
+	world         *world.World
+	listener      *net.TCPListener
+	authenticator *auth.Authenticator
 }
 
 func (srv *Server) Start(startTime time.Time) {
 	log.Infof("Done! (%s) Listening for connections on %s", time.Since(startTime), srv.listener.Addr())
+	if srv.config.Listing.Enabled {
+		s, _ := srv.authenticator.Heartbeat(srv.players.Count())
+		log.Infof("Server available at %s", s)
+		go func() {
+			for range time.Tick(time.Millisecond * time.Duration(srv.config.Listing.HeartbeatFrequency)) {
+				srv.authenticator.Heartbeat(srv.players.Count())
+			}
+		}()
+	}
 	for {
 		c, err := srv.listener.Accept()
 		if err != nil {
@@ -50,6 +61,10 @@ func (srv *Server) handleConnection(c net.Conn) {
 	if pk, ok := p.(*packet.PlayerIdentification); !ok {
 		return
 	} else {
+		if srv.config.Listing.Enforced && !srv.authenticator.Validate(pk.VerificationKey, pk.Username) {
+			conn.WritePacket(&packet.DisconnectPlayer{Reason: "Failed to authenticate"})
+			conn.Close()
+		}
 		if srv.config.Whitelist && !player.Whitelist.Has(pk.Username) {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are not white-listed in this server"})
 			conn.Close()
@@ -62,11 +77,14 @@ func (srv *Server) handleConnection(c net.Conn) {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are already connected to the server on a different client"})
 			conn.Close()
 		}
+		if srv.players.Count() >= srv.config.MaxPlayers {
+			conn.WritePacket(&packet.DisconnectPlayer{Reason: "The server is full"})
+			conn.Close()
+		}
 
 		if pk.CPE {
 			conn.WritePacket(&packet.ExtInfo{
-				AppName:        "Obsidian",
-				ExtensionCount: 0,
+				AppName: "Obsidian",
 			})
 		}
 
