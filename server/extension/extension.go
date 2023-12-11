@@ -3,6 +3,7 @@ package extension
 import (
 	"obsidian/net"
 	"obsidian/net/packet"
+	"obsidian/server/extension/CustomBlocks"
 )
 
 var Extensions = map[string]int32{
@@ -10,6 +11,13 @@ var Extensions = map[string]int32{
 	"MessageTypes":  1,
 	"FullCP437":     1,
 	"EnvMapAspect":  1,
+	"CustomBlocks":  1,
+}
+
+var cbp = &CustomBlocks.CustomBlockSupportLevel{SupportLevel: 1}
+
+func init() {
+	packet.ServerBoundPool[0x13] = func() packet.Packet { return &CustomBlocks.CustomBlockSupportLevel{} }
 }
 
 func EncodeExtensions(c net.Conn) {
@@ -24,6 +32,7 @@ func EncodeExtensions(c net.Conn) {
 			Version: v,
 		})
 	}
+	c.WritePacket(cbp)
 }
 
 func DecodeExtensions(c net.Conn) (appName string, extensions map[string]int32) {

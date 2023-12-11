@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var serverBoundPool = map[byte]func() Packet{
+var ServerBoundPool = map[byte]func() Packet{
 	0x00: func() Packet { return &PlayerIdentification{} },
 	0x05: func() Packet { return &SetBlockServer{} },
 	0x08: func() Packet { return &PlayerPositionOrientation{} },
@@ -23,9 +23,8 @@ func ReadPacket(r io.Reader) Packet {
 		return nil
 	}
 
-	p, ok := serverBoundPool[id[0]]
+	p, ok := ServerBoundPool[id[0]]
 	if !ok {
-		io.ReadAll(r)
 		return nil
 	}
 
@@ -34,6 +33,14 @@ func ReadPacket(r io.Reader) Packet {
 	pk.Decode(Reader{r})
 
 	return pk
+}
+
+func DecodePacket(r io.Reader, pk Packet) {
+	var id [1]byte
+
+	r.Read(id[:])
+
+	pk.Decode(Reader{r})
 }
 
 type Reader struct {

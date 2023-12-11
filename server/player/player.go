@@ -13,6 +13,7 @@ import (
 	"obsidian/server/extension/EnvMapAspect"
 	"obsidian/server/extension/ExtPlayerList"
 	"obsidian/server/world"
+	"obsidian/server/world/block"
 	"slices"
 	"strings"
 	"sync"
@@ -213,6 +214,14 @@ func (p *Player) sendWorldData() {
 		if i != 0 {
 			complete = byte(math.Ceil(float64(i) / float64(len(bytes)) * 100))
 		}
+
+		if !p.HasExtension("CustomBlocks") {
+			for _, b := range x {
+				if b > 50 {
+					b = block.CustomBlockFallBack[b]
+				}
+			}
+		}
 		p.conn.WritePacket(&packet.LevelDataChunk{
 			ChunkData:       x,
 			ChunkLength:     int16(len(x)),
@@ -231,6 +240,7 @@ func (p *Player) Disconnect(reason string) {
 }
 
 func (p *Player) Chat(message string) {
+	fmt.Println(message)
 	if strings.HasPrefix(message, "/") {
 		if len(message) <= 1 {
 			goto chat

@@ -51,7 +51,7 @@ func (cfg Config) New() *Server {
 	log.Info("Loading world")
 	w := world.LoadWorld()
 
-	if len(w.Data.BlockArray) != (int(w.Data.X)*int(w.Data.Y)*int(w.Data.Z))-1 {
+	if len(w.Data.BlockArray) != int(w.Data.X)*int(w.Data.Y)*int(w.Data.Z) {
 		log.Infon("Generating world... 0%")
 		w.Data.BlockArray = (&generator.DefaultGenerator{}).GenerateWorld(w.Data.X, w.Data.Y, w.Data.Z)
 	}

@@ -28,7 +28,7 @@ func (d *DefaultGenerator) GenerateWorld(sizeX, sizeY, sizeZ int16) (blocks []in
 			}
 
 			i := int(x) + int(sizeX)*(int(z)+int(sizeZ)*int(y))
-			blocks[i] = block.BlockGrass
+			blocks[i] = block.Grass
 
 			l := len(fmt.Sprint(per(c-1, len(blocks)/int(sizeY)))) + 1
 

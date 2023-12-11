@@ -16,3 +16,7 @@ func (c Conn) WritePacket(pk packet.Packet) {
 func (c Conn) ReadPacket() packet.Packet {
 	return packet.ReadPacket(c)
 }
+
+func (c Conn) DecodePacket(pk packet.Packet) {
+	packet.DecodePacket(c, pk)
+}

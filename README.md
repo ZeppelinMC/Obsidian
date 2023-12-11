@@ -1,6 +1,6 @@
 # Obsidian
 
-Minecraft Classic server written in Go
+Obsidian is a fast and efficient Minecraft Alpha 0.30 server
 
 ## Currently Supported Extensions
 
@@ -8,3 +8,4 @@ Minecraft Classic server written in Go
 - MessageTypes
 - FullCP437
 - EnvMapAspect
+- CustomBlocks

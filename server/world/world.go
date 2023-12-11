@@ -2,7 +2,6 @@ package world
 
 import (
 	"compress/gzip"
-	"fmt"
 	"os"
 
 	"github.com/aimjel/minecraft/nbt"
@@ -82,11 +81,7 @@ func LoadWorld() *World {
 
 	var d WorldData
 
-	if err := nbt.NewDecoder(dat).Decode(&d); err != nil {
-		fmt.Println(err)
-		d = DefaultWorldData
-	}
-
+	nbt.NewDecoder(dat).Decode(&d)
 	return &World{d}
 }
 
