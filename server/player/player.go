@@ -10,6 +10,7 @@ import (
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
 	"obsidian/server/command"
+	"obsidian/server/extension/EnvMapAspect"
 	"obsidian/server/extension/ExtPlayerList"
 	"obsidian/server/world"
 	"slices"
@@ -302,4 +303,12 @@ func (p *Player) RemovePlayer(pl *Player) {
 	p.conn.WritePacket(&ExtPlayerList.ExtRemovePlayerName{
 		NameID: int16(pl.nameId),
 	})
+}
+
+// Requires EnvMapAspect extension
+func (p *Player) SendTexturePack(url string) {
+	if !p.HasExtension("EnvMapAspect") {
+		return
+	}
+	p.conn.WritePacket(&EnvMapAspect.SetMapEnvUrl{TexturePackURL: url})
 }

@@ -8,8 +8,8 @@ import (
 
 type playerList []string
 
-func (p playerList) Has(s string) bool {
-	for _, p := range p {
+func (p *playerList) Has(s string) bool {
+	for _, p := range *p {
 		if p == s {
 			return true
 		}
@@ -17,19 +17,19 @@ func (p playerList) Has(s string) bool {
 	return false
 }
 
-func (p playerList) Add(s string) {
-	for _, p := range p {
+func (p *playerList) Add(s string) {
+	for _, p := range *p {
 		if p == s {
 			return
 		}
 	}
-	p = append(p, s)
+	*p = append(*p, s)
 }
 
-func (p playerList) Remove(s string) {
-	for i, pl := range p {
+func (p *playerList) Remove(s string) {
+	for i, pl := range *p {
 		if pl == s {
-			p = append(p[:i], p[i+1:]...)
+			*p = append((*p)[:i], (*p)[i+1:]...)
 			return
 		}
 	}

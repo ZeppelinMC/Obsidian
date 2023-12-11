@@ -1,3 +1,5 @@
 /world
 config.toml
 *.json
+obsidian
+obsidian.exe

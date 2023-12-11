@@ -14,6 +14,12 @@ func Info(a ...any) {
 	fmt.Printf("\r%s: %s\n> ", blue.Colorize("INFO"), str)
 }
 
+func Infon(a ...any) {
+	str := fmt.Sprint(a...)
+
+	fmt.Printf("\r%s: %s", blue.Colorize("INFO"), str)
+}
+
 func Infof(format string, a ...any) {
 	str := fmt.Sprintf(format, a...)
 

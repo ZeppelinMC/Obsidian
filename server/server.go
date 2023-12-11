@@ -104,7 +104,7 @@ func (srv *Server) handleConnection(c net.Conn) {
 			UserType:        op,
 		})
 
-		msg := fmt.Sprintf("%s has joined the game", p.Name())
+		msg := fmt.Sprintf("&e%s has joined the game", p.Name())
 
 		srv.players.Range(func(t *player.Player) bool {
 			t.SendMessage(msg, 0)
@@ -120,7 +120,7 @@ func (srv *Server) handleConnection(c net.Conn) {
 			if pac == nil {
 				srv.players.Remove(pk.Username)
 
-				msg := fmt.Sprintf("%s has left the game", p.Name())
+				msg := fmt.Sprintf("&e%s has left the game", p.Name())
 
 				srv.players.Range(func(t *player.Player) bool {
 					t.SendMessage(msg, 0)

@@ -9,6 +9,7 @@ var Extensions = map[string]int32{
 	"ExtPlayerList": 2,
 	"MessageTypes":  1,
 	"FullCP437":     1,
+	"EnvMapAspect":  1,
 }
 
 func EncodeExtensions(c net.Conn) {

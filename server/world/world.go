@@ -2,6 +2,7 @@ package world
 
 import (
 	"compress/gzip"
+	"fmt"
 	"os"
 
 	"github.com/aimjel/minecraft/nbt"
@@ -32,6 +33,23 @@ type WorldData struct {
 	BlockArray                              []int8
 }
 
+var DefaultWorldData = WorldData{
+	FormatVersion: 1,
+	Name:          "ObsidianWorld",
+	X:             512,
+	Y:             256,
+	Z:             512,
+	MapGenerator: worldDataMapGenerator{
+		Software:         "Obsidian",
+		MapGeneratorName: "Default",
+	},
+	Spawn: worldDataSpawn{
+		X: 150,
+		Y: 50,
+		Z: 150,
+	},
+}
+
 type World struct {
 	Data WorldData
 }
@@ -52,18 +70,28 @@ func (w *World) XYZ(index int) (int16, int16, int16) {
 }
 
 func LoadWorld() *World {
-	d1, _ := os.Open("world/main.cw")
+	d1, err := os.Open("world/main.cw")
+	if err != nil {
+		return &World{DefaultWorldData}
+	}
 
-	dat, _ := gzip.NewReader(d1)
+	dat, err := gzip.NewReader(d1)
+	if err != nil {
+		return &World{DefaultWorldData}
+	}
 
 	var d WorldData
 
-	nbt.NewDecoder(dat).Decode(&d)
+	if err := nbt.NewDecoder(dat).Decode(&d); err != nil {
+		fmt.Println(err)
+		d = DefaultWorldData
+	}
 
 	return &World{d}
 }
 
 func (w *World) Save() {
+	os.Mkdir("world", 0755)
 	file, _ := os.Create("world/main.cw")
 	g := gzip.NewWriter(file)
 
@@ -72,61 +100,3 @@ func (w *World) Save() {
 	g.Close()
 	file.Close()
 }
-
-type Block byte
-
-const (
-	BlockAir Block = iota
-	BlockStone
-	BlockGrass
-	BlockDirt
-	BlockCobblestone
-	BlockPlanks
-	BlockSapling
-	BlockBedrock
-	BlockFlowingWater
-	BlockWater
-	BlockFlowingLava
-	BlockLava
-	BlockSand
-	BlockGravel
-	BlockGoldOre
-	BlockIronOre
-	BlockCoalOre
-	BlockWood
-	BlockLeaves
-	BlockSponge
-	BlockGlass
-
-	BlockRed
-	BlockOrange
-	BlockYellow
-	BlockLime
-	BlockGreen
-	BlockTeal
-	BlockAqua
-	BlockCyan
-	BlockBlue
-	BlockIndigo
-	BlockViolet
-	BlockMagenta
-	BlockPink
-	BlockBlack
-	BlockGray
-	BlockWhite
-
-	BlockDandelion
-	BlockRose
-	BlockBrownMushroom
-	BlockRedMushroom
-
-	BlockGold
-	BlockIron
-	BlockDoubleSlab
-	BlockSlab
-	BlockBricks
-	BlockTNT
-	BlockBookshelf
-	BlockMoss
-	BlockObsidian
-)

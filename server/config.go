@@ -7,6 +7,7 @@ import (
 	"obsidian/server/broadcast"
 	"obsidian/server/player"
 	"obsidian/server/world"
+	"obsidian/server/world/generator"
 	"os"
 
 	"github.com/pelletier/go-toml/v2"
@@ -27,6 +28,8 @@ type Config struct {
 	Whitelist  bool
 	MaxPlayers int
 
+	TexturePackURL string
+
 	Listing listing
 }
 
@@ -35,12 +38,23 @@ func (cfg Config) New() *Server {
 	if err != nil {
 		panic(err)
 	}
+
+	if len(cfg.TexturePackURL) > 64 {
+		log.Error("Please get a texture pack url that's 64 characters or shorter. This is due to Minecraft Classic protocol limitations.")
+		cfg.TexturePackURL = ""
+	}
+
 	l, err := net.ListenTCP("tcp", i)
 	if err != nil {
 		panic(err)
 	}
 	log.Info("Loading world")
 	w := world.LoadWorld()
+
+	if len(w.Data.BlockArray) != (int(w.Data.X)*int(w.Data.Y)*int(w.Data.Z))-1 {
+		log.Infon("Generating world... 0%")
+		w.Data.BlockArray = (&generator.DefaultGenerator{}).GenerateWorld(w.Data.X, w.Data.Y, w.Data.Z)
+	}
 
 	player.LoadPlayerData()
 	return &Server{

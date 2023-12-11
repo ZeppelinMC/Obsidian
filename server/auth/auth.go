@@ -45,7 +45,7 @@ func (auth *Authenticator) Heartbeat(playerCount int) (string, error) {
 	if auth.public {
 		pb = "True"
 	}
-	u, err := url.ParseRequestURI(fmt.Sprintf("%s?port=%d&max=%d&name=%s&public=%s&version=7&salt=%s&users=%d", auth.heartbeatUrl, auth.port, auth.maxPlayers, url.QueryEscape(auth.name), pb, auth.salt, playerCount))
+	u, err := url.ParseRequestURI(fmt.Sprintf("%s?port=%d&max=%d&name=%s&public=%s&version=7&salt=%s&users=%d&software=Obsidian", auth.heartbeatUrl, auth.port, auth.maxPlayers, url.QueryEscape(auth.name), pb, auth.salt, playerCount))
 	if err != nil {
 		return "", err
 	}
