@@ -13,6 +13,7 @@ var Extensions = map[string]int32{
 	"EnvMapAspect":  1,
 	"CustomBlocks":  1,
 	"FastMap":       1,
+	"HeldBlock":     1,
 }
 
 var cbp = &CustomBlocks.CustomBlockSupportLevel{SupportLevel: 1}

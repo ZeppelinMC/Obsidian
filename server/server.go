@@ -137,7 +137,7 @@ func (srv *Server) handleConnection(c net.Conn) {
 			case *packet.Message:
 				p.Chat(pk.Message)
 			case *packet.PlayerPositionOrientation:
-				p.Move(pk.X, pk.Y, pk.Z, pk.Yaw, pk.Pitch)
+				p.Move(pk.X, pk.Y, pk.Z, pk.Yaw, pk.Pitch, pk.PlayerID)
 			case *packet.SetBlockServer:
 				if pk.Mode == 0 {
 					pk.BlockType = 0

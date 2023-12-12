@@ -35,6 +35,8 @@ type Player struct {
 	id     int8
 	nameId uint8
 
+	HeldBlock atomic.Value[int8]
+
 	extensions map[string]int32
 	AppName    atomic.Value[string]
 
@@ -118,7 +120,16 @@ func (p *Player) SetBlock(x, y, z int16, blockType byte) {
 	})
 }
 
-func (p *Player) Move(x, y, z int16, yaw, pitch byte) {
+func (p *Player) Move(x, y, z int16, yaw, pitch byte, heldBlock int8) {
+	if p.HasExtension("HeldBlock") {
+		l := int8(50)
+		if p.HasExtension("CustomBlocks") {
+			l = 65
+		}
+		if heldBlock >= 0 && heldBlock <= l {
+			p.HeldBlock.Set(heldBlock)
+		}
+	}
 	p.X.Set(x)
 	p.Y.Set(y)
 	p.Z.Set(z)
