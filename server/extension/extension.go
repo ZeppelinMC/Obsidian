@@ -12,6 +12,7 @@ var Extensions = map[string]int32{
 	"FullCP437":     1,
 	"EnvMapAspect":  1,
 	"CustomBlocks":  1,
+	"FastMap":       1,
 }
 
 var cbp = &CustomBlocks.CustomBlockSupportLevel{SupportLevel: 1}

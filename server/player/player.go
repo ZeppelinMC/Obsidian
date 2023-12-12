@@ -2,6 +2,7 @@ package player
 
 import (
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"fmt"
 	"math"
@@ -93,7 +94,6 @@ func (p *Player) SetExtensions(m map[string]int32) {
 }
 
 func (p *Player) Join() {
-	p.conn.WritePacket(packet.LevelInitialize{})
 	p.sendWorldData()
 	p.conn.WritePacket(&packet.LevelFinalize{XSize: p.world.Data.X, YSize: p.world.Data.Y, ZSize: p.world.Data.Z})
 
@@ -199,15 +199,22 @@ func (p *Player) IsSpawned(pl *Player) bool {
 
 func (p *Player) sendWorldData() {
 	var buf bytes.Buffer
-	gun := gzip.NewWriter(&buf)
-
 	l := int32(len(p.world.Data.BlockArray))
-	gun.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)})
-	gun.Write(*(*[]byte)(unsafe.Pointer(&p.world.Data.BlockArray)))
-	gun.Close()
+	p.conn.WritePacket(&packet.LevelInitialize{FastMap: p.HasExtension("FastMap"), MapSize: l})
+
+	worldData := *(*[]byte)(unsafe.Pointer(&p.world.Data.BlockArray))
+	if p.HasExtension("FastMap") {
+		df, _ := flate.NewWriter(&buf, -1)
+		df.Write(worldData)
+		df.Close()
+	} else {
+		gun := gzip.NewWriter(&buf)
+		gun.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)})
+		gun.Write(worldData)
+		gun.Close()
+	}
 
 	bytes := buf.Bytes()
-
 	for i := 0; i < len(bytes); i += 1024 {
 		x := bytes[i:int(math.Min(float64(i+1024), float64(len(bytes))))]
 		complete := byte(0)

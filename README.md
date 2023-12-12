@@ -9,3 +9,4 @@ Obsidian is a fast and efficient Minecraft Alpha 0.30 server
 - FullCP437
 - EnvMapAspect
 - CustomBlocks
+- FastMap

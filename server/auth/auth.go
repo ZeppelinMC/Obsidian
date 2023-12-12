@@ -57,15 +57,7 @@ func (auth *Authenticator) Heartbeat(playerCount int) (string, error) {
 	if _, err := url.ParseRequestURI(string(d)); err == nil {
 		return string(d), nil
 	}
-	return "", hberr{string(d)}
-}
-
-type hberr struct {
-	err string
-}
-
-func (h hberr) Error() string {
-	return h.err
+	return "", fmt.Errorf(string(d))
 }
 
 func (auth *Authenticator) Validate(key string, username string) (ok bool) {
