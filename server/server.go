@@ -69,22 +69,27 @@ func (srv *Server) handleConnection(c net.Conn) {
 		if srv.config.Listing.Enforced && !srv.authenticator.Validate(pk.VerificationKey, pk.Username) {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "Failed to authenticate"})
 			conn.Close()
+			return
 		}
 		if srv.config.Whitelist && !player.Whitelist.Has(pk.Username) {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are not white-listed in this server"})
 			conn.Close()
+			return
 		}
 		if player.BannedPlayers.Has(pk.Username) {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are banned from this server"})
 			conn.Close()
+			return
 		}
 		if p := srv.players.Get(pk.Username); p != nil {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "You are already connected to the server on a different client"})
 			conn.Close()
+			return
 		}
 		if srv.players.Count() >= srv.config.MaxPlayers {
 			conn.WritePacket(&packet.DisconnectPlayer{Reason: "The server is full"})
 			conn.Close()
+			return
 		}
 
 		p := player.New(pk.Username, conn, srv.world, srv.players, core.Manager)
