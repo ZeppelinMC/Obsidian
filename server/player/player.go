@@ -200,9 +200,11 @@ func (p *Player) IsSpawned(pl *Player) bool {
 func (p *Player) sendWorldData() {
 	var buf bytes.Buffer
 	l := int32(len(p.world.Data.BlockArray))
+
 	p.conn.WritePacket(&packet.LevelInitialize{FastMap: p.HasExtension("FastMap"), MapSize: l})
 
 	worldData := *(*[]byte)(unsafe.Pointer(&p.world.Data.BlockArray))
+
 	if p.HasExtension("FastMap") {
 		df, _ := flate.NewWriter(&buf, -1)
 		df.Write(worldData)
