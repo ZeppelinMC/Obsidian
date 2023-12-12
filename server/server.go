@@ -26,7 +26,11 @@ type Server struct {
 func (srv *Server) Start(startTime time.Time) {
 	log.Infof("Done! (%s) Listening for connections on %s", time.Since(startTime), srv.listener.Addr())
 	if srv.config.Listing.Enabled {
-		s, _ := srv.authenticator.Heartbeat(srv.players.Count())
+		s, err := srv.authenticator.Heartbeat(srv.players.Count())
+		if err != nil {
+			log.Errorf("Heartbeat error: %s", err)
+			return
+		}
 		log.Infof("Server available at %s", s)
 		go func() {
 			for range time.Tick(time.Millisecond * time.Duration(srv.config.Listing.HeartbeatFrequency)) {

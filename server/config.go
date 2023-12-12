@@ -62,7 +62,7 @@ func (cfg Config) New() *Server {
 		players:       broadcast.New[*player.Player](),
 		world:         w,
 		config:        cfg,
-		authenticator: auth.NewAuthenticator("http://www.classicube.net/heartbeat.jsp", cfg.ServerName, 32, i.Port, false),
+		authenticator: auth.NewAuthenticator("http://www.classicube.net/heartbeat.jsp", cfg.ServerName, cfg.MaxPlayers, i.Port, cfg.Listing.Public),
 	}
 }
 
