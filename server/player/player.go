@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"obsidian/atomic"
+	"obsidian/log"
 	"obsidian/net"
 	"obsidian/net/packet"
 	"obsidian/server/broadcast"
@@ -269,6 +270,7 @@ func (p *Player) Chat(message string) {
 	}
 
 chat:
+	log.Infof("[%s] Player %s sent a chat message: %s", p.conn.RemoteAddr(), p.Name(), message)
 	msg := fmt.Sprintf("&f<%s> %s", p.name, message)
 	p.players.Range(func(t *Player) bool {
 		t.SendMessage(msg, 0)
@@ -277,6 +279,7 @@ chat:
 }
 
 func (p *Player) command(cmd string) {
+	log.Infof("[%s] Player %s used a command: %s", p.conn.RemoteAddr(), p.Name(), cmd)
 	args := strings.Split(cmd, " ")
 	cmd = args[0]
 	args = args[1:]

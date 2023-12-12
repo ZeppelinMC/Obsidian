@@ -104,6 +104,8 @@ func (srv *Server) handleConnection(c net.Conn) {
 			UserType:        op,
 		})
 
+		log.Infof("[%s] Player %s has joined the server using %s", c.RemoteAddr(), p.Name(), p.AppName.Get())
+
 		msg := fmt.Sprintf("&e%s has joined the game", p.Name())
 
 		srv.players.Range(func(t *player.Player) bool {
@@ -119,6 +121,8 @@ func (srv *Server) handleConnection(c net.Conn) {
 			pac := packet.ReadPacket(c)
 			if pac == nil {
 				srv.players.Remove(pk.Username)
+
+				log.Infof("[%s] Player %s has left the server", c.RemoteAddr(), p.Name())
 
 				msg := fmt.Sprintf("&e%s has left the game", p.Name())
 
