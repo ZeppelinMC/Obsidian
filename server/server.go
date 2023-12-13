@@ -48,6 +48,7 @@ func (srv *Server) Start(startTime time.Time) {
 	}
 }
 
+// Server.Stop saves the world, disconnects each player then stops the server
 func (srv *Server) Stop() {
 	srv.world.Save()
 	srv.players.Range(func(t *player.Player) bool {

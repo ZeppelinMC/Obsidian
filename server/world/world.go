@@ -1,11 +1,14 @@
 package world
 
 import (
+	"errors"
 	"io"
 	"obsidian/server/world/format"
 	"os"
 	"unsafe"
 )
+
+var ErrInvalidIndex = errors.New("invalid index")
 
 type World struct {
 	path   string
@@ -14,14 +17,22 @@ type World struct {
 	ogdata any
 }
 
-func (w *World) SetBlock(x, y, z int16, blockType byte) {
-	w.Data.BlockArray[w.GetIndex(x, y, z)] = int8(blockType)
+func (w *World) SetBlock(x, y, z int16, blockType byte) error {
+	i := w.GetIndex(x, y, z)
+
+	if i > len(w.Data.BlockArray) || i < 0 {
+		return ErrInvalidIndex
+	}
+	w.Data.BlockArray[i] = int8(blockType)
+	return nil
 }
 
+// GetIndex returns the index for the x, y, z in the block array
 func (w *World) GetIndex(x, y, z int16) int {
 	return int(x) + int(w.Data.X)*(int(z)+int(w.Data.Z)*int(y))
 }
 
+// XYZ returns the x, y, z for the index
 func (w *World) XYZ(index int) (int16, int16, int16) {
 	x := index % int(w.Data.X)
 	y := index / (int(w.Data.X) * int(w.Data.Z))
@@ -29,6 +40,8 @@ func (w *World) XYZ(index int) (int16, int16, int16) {
 	return int16(x), int16(y), int16(z)
 }
 
+// LoadWorld loads a world in the path using the specified reader. Defaults to classicworld.
+// If the world failed to load it will use the default world data and the map will then be regenerated
 func LoadWorld(path, typ string) *World {
 	file, err := os.Open(path)
 	if err != nil {
@@ -60,6 +73,7 @@ func LoadWorld(path, typ string) *World {
 	return &World{path: path, Data: data, reader: typ, ogdata: ogdata}
 }
 
+// World.Save saves the world. If it's a generated world using the level reader, the identifier will be 252
 func (w *World) Save() {
 	file, _ := os.Create(w.path)
 	switch w.reader {

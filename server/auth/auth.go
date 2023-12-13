@@ -36,6 +36,7 @@ func genSalt() string {
 	return string(salt)
 }
 
+// Authenticator is used to add the server to the server list and verify player names
 func NewAuthenticator(url string, name string, maxPlayers, port int, public bool) *Authenticator {
 	return &Authenticator{heartbeatUrl: url, name: name, maxPlayers: maxPlayers, port: port, public: public, salt: genSalt()}
 }
