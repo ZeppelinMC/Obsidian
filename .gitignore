@@ -3,3 +3,5 @@ config.toml
 *.json
 obsidian
 obsidian.exe
+world.cw
+world.lvl

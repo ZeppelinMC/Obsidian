@@ -1,56 +1,17 @@
 package world
 
 import (
-	"compress/gzip"
+	"io"
+	"obsidian/server/world/format"
 	"os"
-
-	"github.com/aimjel/minecraft/nbt"
+	"unsafe"
 )
 
-type worldDataCreatedBy struct {
-	Service, Username string
-}
-
-type worldDataMapGenerator struct {
-	Software, MapGeneratorName string
-}
-
-type worldDataSpawn struct {
-	X, Y, Z int16
-	H, P    int8
-}
-
-type WorldData struct {
-	FormatVersion                           int8
-	Name                                    string
-	UUID                                    []float64
-	X, Y, Z                                 int16
-	CreatedBy                               worldDataCreatedBy
-	MapGenerator                            worldDataMapGenerator
-	TimeCreated, LastAccessed, LastModified int64
-	Spawn                                   worldDataSpawn
-	BlockArray                              []int8
-}
-
-var DefaultWorldData = WorldData{
-	FormatVersion: 1,
-	Name:          "ObsidianWorld",
-	X:             512,
-	Y:             256,
-	Z:             512,
-	MapGenerator: worldDataMapGenerator{
-		Software:         "Obsidian",
-		MapGeneratorName: "Default",
-	},
-	Spawn: worldDataSpawn{
-		X: 150,
-		Y: 50,
-		Z: 150,
-	},
-}
-
 type World struct {
-	Data WorldData
+	path   string
+	reader string
+	Data   format.WorldData
+	ogdata any
 }
 
 func (w *World) SetBlock(x, y, z int16, blockType byte) {
@@ -68,30 +29,59 @@ func (w *World) XYZ(index int) (int16, int16, int16) {
 	return int16(x), int16(y), int16(z)
 }
 
-func LoadWorld() *World {
-	d1, err := os.Open("world/main.cw")
+func LoadWorld(path, typ string) *World {
+	file, err := os.Open(path)
 	if err != nil {
-		return &World{DefaultWorldData}
+		return &World{path: path, Data: format.DefaultWorldData, reader: typ}
 	}
 
-	dat, err := gzip.NewReader(d1)
-	if err != nil {
-		return &World{DefaultWorldData}
+	var data format.WorldData
+	var ogdata any
+
+	switch typ {
+	case "level":
+		l, err := format.ReadLevel(file)
+		if err != nil {
+			data = format.DefaultWorldData
+			break
+		}
+		ogdata = l
+		data = l.ToWorldData()
+	default:
+		d, err := format.ReadClassicWorld(file)
+		if err != nil && err != io.EOF {
+			data = format.DefaultWorldData
+			break
+		}
+		data = d
 	}
 
-	var d WorldData
-
-	nbt.NewDecoder(dat).Decode(&d)
-	return &World{d}
+	file.Close()
+	return &World{path: path, Data: data, reader: typ, ogdata: ogdata}
 }
 
 func (w *World) Save() {
-	os.Mkdir("world", 0755)
-	file, _ := os.Create("world/main.cw")
-	g := gzip.NewWriter(file)
+	file, _ := os.Create(w.path)
+	switch w.reader {
+	case "level":
+		if w.ogdata == nil {
+			w.ogdata = format.Level{
+				Identifier: 252,
+				Width:      w.Data.X,
+				Height:     w.Data.Y,
+				Length:     w.Data.Z,
+				SpawnX:     w.Data.Spawn.X,
+				SpawnY:     w.Data.Spawn.Y,
+				SpawnZ:     w.Data.Spawn.Z,
+				SpawnYaw:   byte(w.Data.Spawn.H),
+				SpawnPitch: byte(w.Data.Spawn.P),
 
-	nbt.NewEncoder(g).Encode(w.Data)
-
-	g.Close()
+				Blocks: *(*[]byte)(unsafe.Pointer(&w.Data.BlockArray)),
+			}
+		}
+		format.WriteLevel(file, w.ogdata.(format.Level))
+	default:
+		format.WriteClassicWorld(file, w.Data)
+	}
 	file.Close()
 }

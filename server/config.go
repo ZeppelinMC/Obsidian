@@ -28,6 +28,10 @@ type Config struct {
 	Whitelist  bool
 	MaxPlayers int
 
+	// Can be "level" / "classicworld"
+	WorldReader string
+	WorldPath   string
+
 	TexturePackURL string
 
 	Listing listing
@@ -49,7 +53,7 @@ func (cfg Config) New() *Server {
 		panic(err)
 	}
 	log.Info("Loading world")
-	w := world.LoadWorld()
+	w := world.LoadWorld(cfg.WorldPath, cfg.WorldReader)
 
 	if len(w.Data.BlockArray) != int(w.Data.X)*int(w.Data.Y)*int(w.Data.Z) {
 		log.Infon("Generating world... 0%")
@@ -101,4 +105,6 @@ var Default = Config{
 		Enabled:            true,
 		HeartbeatFrequency: 45_000,
 	},
+	WorldReader: "classicworld",
+	WorldPath:   "world.cw",
 }
